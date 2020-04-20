@@ -2,9 +2,9 @@
   "name": "linecutter",
   "version": "1.0.0",
   "description": "Programm to cut lines",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": {
     "type": "git",

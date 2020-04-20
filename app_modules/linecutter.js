@@ -1,13 +1,15 @@
-export class LineCutter {
+class LineCutter {
 
     constructor(details, basis, saw, ends = 0, stores = [], bfirst = false){
         this.details = this.getDetails(details);
-        this.basis = basis;
-        this.saw = saw;
-        this.ends = ends;
+        this.basis = Number.isInteger(basis)? basis : NaN;
+        this.saw = Number.isInteger(saw)? saw : NaN;
+        this.ends = Number.isInteger(ends)? ends : NaN;
         this.stores = stores;
         this.bfirst = bfirst;
         this.schemas = [];
+
+        if(Number.isNaN(this.basis) || Number.isNaN(this.saw) || Number.isNaN(this.ends)) throw new Error('Invalid arguments in LineCutter constructor');
     }
     
     getAllChains(line){
@@ -47,6 +49,7 @@ export class LineCutter {
     }
 
     getBestChain(line, deviation = 0){
+        if(!Number.isInteger(deviation)) throw new Error('Deviation is not an integer in getBestChain()');
             // Getting set of chains for the line length
         let allChains = this.getAllChains(line);
             // Check if there chains to sort are
@@ -99,7 +102,7 @@ export class LineCutter {
     
     
     
-    detailClass = class {
+    Detail = class {
         constructor(size, num, id){
             this.size = size;
             this.initNum = num;
@@ -111,7 +114,7 @@ export class LineCutter {
             if(this.curNum - num >= 0){
                 this.curNum -= num;
             } else {
-                console.error(`Can't take so much`);
+                throw new Error(`Can't take ${num} of detail (id:${this.id}, size: ${this.size}) because it's current num is ${this.curNum}`);
             }
         }
     
@@ -119,16 +122,22 @@ export class LineCutter {
             if(this.curNum + num <= this.initNum){
                 this.curNum += num;
             } else {
-                console.error(`Can't turn so much`);
+                throw new Error(`Can't give ${num} to detail (id:${this.id}, size: ${this.size}) because it's initial num is ${this.initNum} and current num is ${this.curNum}`);
             }
         }
     }
 
     getDetails(detailsArr){
-        return detailsArr.map((d, i) => new this.detailClass(d[0], d[1], i)).sort((a,b) => a.size - b.size);
+        if(!Array.isArray(detailsArr)) throw new Error('Incoming details should be an array');
+        if(!detailsArr.every(pair => Array.isArray(pair))) throw new Error('Every item of incoming array of details should be an array');
+        if(!detailsArr.every(pair => pair.length === 2)) throw new Error(`Every pair of incoming array of details should have two numbers, describing length and number of detail`);
+        if(!detailsArr.every(pair => Number.isInteger(pair[0]) && Number.isInteger(pair[1]))) throw new Error(`Incoming array of details' pairs should contain integers only`);
+        if(!detailsArr.every(pair => pair[1] > 0 && pair[1] < 1000)) throw new Error(`All of incoming details should have at least one and not more than 999 numbers`);
+        return detailsArr.map((d, i) => new this.Detail(d[0], d[1], i)).sort((a,b) => a.size - b.size);
     }
 
     fitTo(line){
+        if(!Number.isInteger(line)) throw new Error('Line is not an integer it fitTo(line)');
         let fitDetails = this.details.filter(d => d.size <= line && d.curNum > 0);
         if(!fitDetails.length) return false;
         return fitDetails;
@@ -143,3 +152,5 @@ export class LineCutter {
     }
 
 }
+
+module.exports = LineCutter;

@@ -3,6 +3,11 @@
     <head></head>
     <body>
         <div id="result"></div>
-        <script type="module" src="index.js"></script>
+        <script>
+            let module = {};
+            module.exports = null;
+        </script>
+        <script src="app_modules/linecutter.js"></script>
+        <script src="index.js"></script>
     </body>
 </html>
