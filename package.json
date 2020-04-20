@@ -1,0 +1,23 @@
+{
+  "name": "linecutter",
+  "version": "1.0.0",
+  "description": "Programm to cut lines",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kurpuskul/linecutter.git"
+  },
+  "author": "Efimov Leonid",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kurpuskul/linecutter/issues"
+  },
+  "homepage": "https://github.com/kurpuskul/linecutter#readme",
+  "devDependencies": {
+    "electron": "^8.2.3",
+    "jest": "^25.4.0"
+  }
+}
