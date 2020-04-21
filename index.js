@@ -1,3 +1,10 @@
-let cut = new LineCutter([[600,4],[526,4],[432,9],[892,3]], 2700, 4);
+let params = [[[600,30],[540,50],[390,200]], 27000, 4];
+let cutter = new LineCutter(...params);
 
-console.log(cut.getBestChain(6000));
+let withLongest = cutter.getSchemaWithLongest(1200);
+
+console.log(withLongest);
+
+let best = cutter.getBestSchema(1200, 40);
+
+console.log(best);

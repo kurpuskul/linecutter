@@ -1,4 +1,4 @@
-class LineCutter {
+class LineCutter{
 
     constructor(details, basis, saw, ends = 0, stores = [], bfirst = false){
         this.details = this.getDetails(details);
@@ -63,11 +63,11 @@ class LineCutter {
             chain.items.sort((a,b) => b.size - a.size);
         })
             // Returning a chain that contains longest details inside by comparing one by one from start (using string comparing by symbols and filling to 6 ones by 0)
-        return longestChains.sort((a,b) => a.items.map(i => this.fillByZero(i.size)).join() > b.items.map(i => this.fillByZero(i.size)).join() ? -1 : 1)[0];
+        return longestChains.sort((a,b) => this.createStringFromDetails(a.items) > this.createStringFromDetails(b.items) ? -1 : 1)[0];
     }
 
-    getBestSchema(line){
-        let bestChain = this.getBestChain(line, 0);
+    getBestSchema(line, deviation = 0){
+        let bestChain = this.getBestChain(line, deviation);
         if(!bestChain) return false;
 
 
@@ -89,15 +89,27 @@ class LineCutter {
         return schema;
     }
 
-    getLongSchema(line){
+    getSchemaWithLongest(line, deviation = 0){
         let longest = this.getLongest(line);
+        if(!longest) return false;
+
         longest.take();
-        let best = this.getBestSchema(line - longest.size - this.saw);
+
+        let bestSchema = this.getBestSchema(line - longest.size - this.saw, deviation);
+
         longest.give();
-        best.totLen += longest.size + this.saw;
-        best.usedLen += longest.size + this.saw;
-        best.usages[0].detail == longest ? best.usages[0].num++ :best.usages.push({detail : longest, num : 1});
-        return best;
+
+        if(bestSchema){
+            bestSchema.totalLen += longest.size + this.saw;
+            bestSchema.usedLen += longest.size + this.saw;
+            bestSchema.usages[0].detail == longest ? bestSchema.usages[0].num++ :bestSchema.usages.unshift({detail : longest, num : 1});
+        } else {
+                // getBestSchema may return false if no detail fit to the rest length of line
+                // In that case bestSchema will hold just the longest detail itself
+            bestSchema = {usages: [{detail : longest, num : 1}], totalLen: line, usedLen: longest.size};
+        }
+
+        return bestSchema;     
     }
     
     
@@ -144,13 +156,30 @@ class LineCutter {
     }
 
     getLongest(line){
+        let fit_to_line = this.fitTo(line);
+        if(!fit_to_line) return false;
         return this.fitTo(line).sort((a,b) => b.size - a.size)[0];
     }
 
-    fillByZero(size){
-        return '0'.repeat(6 - size.toString().length) + size;
+    createStringFromDetails(details){
+        let sizes = details.map(det => det.size);
+        let string = sizes.map(size => '0'.repeat(6 - size.toString().length) + size).join();
+        return string;
     }
 
 }
 
-module.exports = LineCutter;
+module.exports = LineCutter; // For testing by JEST
+
+onmessage = message => {
+    let cutter = new LineCutter(...message.data[0]);
+    let result;
+    if(message.data[1] == 1){
+        result = cutter.getBestSchema(cutter.basis, 20);
+    } else if(message.data[1] == 2){
+        result = cutter.getBestChain(cutter.basis, 20);
+    } else if(message.data[1] == 3){
+        result = cutter.getAllChains(cutter.basis).length;
+    }
+    postMessage(result);
+}
