@@ -13,11 +13,10 @@ class LineCutter{
     }
     
     getAllChains(line){
-            // Get all details that fit to length of the line
+
         let fitDetails = this.fitTo(line);
-            // If there is no details to cut return false immediately
         if(!fitDetails) return false;
-            // Preparing an array for chains [details]
+
         let chains = [];
             // Recursive function to create tree of variations 
         let getChains = (details, sum, lastIndex, chain) => {
@@ -33,10 +32,10 @@ class LineCutter{
                 if(details[i].size > sum || details[i].curNum == 0) continue;
 
                 details[i].take();
-                    // Coping the chain (to keep all variants)
+
                 let curChain = [...chain];
                 curChain.push(details[i]);
-                    // Calling with new length left and current chain copy
+
                 getChains(details, sum - details[i].size - this.saw, i, curChain);
 
                 details[i].give();
@@ -44,26 +43,24 @@ class LineCutter{
         }
             // Starting recursive function with array of details fit to the line length
         getChains(this.fitTo(line), line, 0, []);
-            // returning structured chains : {items : details, len : sum of detail lengths with whole saw amount}
-        return chains.map(v => ({items : v, len : v.reduce((a,b) => a + b.size + this.saw, -this.saw)}));
+            // returning array of Chains (len : sum of detail lengths with saws between them)
+        return chains.map(detailSet => (new this.Chain(detailSet, detailSet.reduce((a,b) => a + b.size + this.saw, -this.saw))));
     }
 
     getBestChain(line, deviation = 0){
         if(!Number.isInteger(deviation)) throw new Error('Deviation is not an integer in getBestChain()');
-            // Getting set of chains for the line length
+
         let allChains = this.getAllChains(line);
-            // Check if there chains to sort are
         if(!allChains) return false;
-            // Taking longest chain length of the set
-        let longestLen = allChains.sort((a,b) => b.len - a.len)[0].len;
-            // Keep only best chains by length according to the longest one and deviation 
-        let longestChains = allChains.filter(chain => chain.len >= longestLen - deviation);
-            // Sort items (details) inside chains by length (longest first)
+
+        let longestChain = allChains.sort((a,b) => b.len - a.len)[0].len;
+        let longestChains = allChains.filter(chain => chain.len >= longestChain - deviation);
+
         longestChains.forEach(chain => {
-            chain.items.sort((a,b) => b.size - a.size);
+            chain.details.sort((a,b) => b.size - a.size);
         })
-            // Returning a chain that contains longest details inside by comparing one by one from start (using string comparing by symbols and filling to 6 ones by 0)
-        return longestChains.sort((a,b) => this.createStringFromDetails(a.items) > this.createStringFromDetails(b.items) ? -1 : 1)[0];
+            // Returning a chain that contains longest details inside by comparing detail lists as strings
+        return longestChains.sort((a,b) => this.createStringFromDetails(a.details) > this.createStringFromDetails(b.details) ? -1 : 1)[0];
     }
 
     getBestSchema(line, deviation = 0){
@@ -71,18 +68,18 @@ class LineCutter{
         if(!bestChain) return false;
 
 
-        let schema = {usages: []};
+        let schema = new this.Schema();
 
         let currentDetail = null;
         let putToSchema = (detail) => {
             if(detail != currentDetail){
-                schema.usages.push({detail: detail, num: 1});
+                schema.addUsage(new this.Usage(detail, 1), false);
                 currentDetail = detail;
             } else {
-                schema.usages.find(u => u.detail == detail).num++;
+                schema.usages.find(u => u.detail == detail).addNum();
             }
         }
-        bestChain.items.forEach(putToSchema);
+        bestChain.details.forEach(putToSchema);
 
         schema.totalLen = line;
         schema.usedLen = bestChain.len;
@@ -102,11 +99,11 @@ class LineCutter{
         if(bestSchema){
             bestSchema.totalLen += longest.size + this.saw;
             bestSchema.usedLen += longest.size + this.saw;
-            bestSchema.usages[0].detail == longest ? bestSchema.usages[0].num++ :bestSchema.usages.unshift({detail : longest, num : 1});
+            bestSchema.usages[0].detail == longest ? bestSchema.usages[0].addNum() : bestSchema.addUsage(new this.Usage(longest));
         } else {
                 // getBestSchema may return false if no detail fit to the rest length of line
                 // In that case bestSchema will hold just the longest detail itself
-            bestSchema = {usages: [{detail : longest, num : 1}], totalLen: line, usedLen: longest.size};
+            bestSchema = new this.Schema([new this.Usage(longest)], line, longest.size);
         }
 
         return bestSchema;     
@@ -147,6 +144,41 @@ class LineCutter{
         if(!detailsArr.every(pair => pair[1] > 0 && pair[1] < 1000)) throw new Error(`All of incoming details should have at least one and not more than 999 numbers`);
         return detailsArr.map((d, i) => new this.Detail(d[0], d[1], i)).sort((a,b) => a.size - b.size);
     }
+
+    Chain = class {
+        constructor(details, len){
+            this.details = details;
+            this.len = len;
+        }
+    }
+
+    Usage = class {
+        constructor(detail, num = 1){
+            this.detail = detail;
+            this.num = num;
+        }
+
+        addNum(num = 1){
+            this.num += num;
+        }
+    }
+
+    Schema = class {
+        constructor(usages = [], totalLen=0, usedLen=0){
+            this.usages = usages;
+            this.totalLen = totalLen;
+            this.usedLen = usedLen;
+        }
+
+        addUsage(usage, first=true){
+            if(first){
+                this.usages.unshift(usage);
+            } else {
+                this.usages.push(usage);
+            }
+        }
+    }
+
 
     fitTo(line){
         if(!Number.isInteger(line)) throw new Error('Line is not an integer it fitTo(line)');
