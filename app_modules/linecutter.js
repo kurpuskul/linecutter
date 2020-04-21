@@ -170,16 +170,3 @@ class LineCutter{
 }
 
 module.exports = LineCutter; // For testing by JEST
-
-onmessage = message => {
-    let cutter = new LineCutter(...message.data[0]);
-    let result;
-    if(message.data[1] == 1){
-        result = cutter.getBestSchema(cutter.basis, 20);
-    } else if(message.data[1] == 2){
-        result = cutter.getBestChain(cutter.basis, 20);
-    } else if(message.data[1] == 3){
-        result = cutter.getAllChains(cutter.basis).length;
-    }
-    postMessage(result);
-}

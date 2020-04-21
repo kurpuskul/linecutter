@@ -1,10 +1,9 @@
-let params = [[[600,30],[540,50],[390,200]], 27000, 4];
-let cutter = new LineCutter(...params);
+let worker = new Worker('./workers/worker_cutter.js');
 
-let withLongest = cutter.getSchemaWithLongest(1200);
+worker.postMessage('Some');
 
-console.log(withLongest);
+worker.onmessage = message => {
+    console.log(message.data);
+}
 
-let best = cutter.getBestSchema(1200, 40);
-
-console.log(best);
+console.log(window);
