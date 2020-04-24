@@ -108,6 +108,63 @@ class LineCutter{
 
         return bestSchema;     
     }
+
+    countPossibleSchemas(schema){
+        return Math.floor(Math.min(...schema.usages.map(usage => usage.detail.curNum/usage.num)));
+    }
+
+    setPossibleSchemasNum(schema){
+        schema.num = this.countPossibleSchemas(schema);
+        return schema;
+    }
+
+    takeDetailsOfSchema(schema){
+        schema.usages.forEach(usage => {
+            usage.detail.take(usage.num * schema.num);
+        })
+    }
+
+    hasAnyDetail(){
+        return this.details.some(detail => detail.curNum > 0);
+    }
+
+    cutBasis(mode){
+        const schemas = [];
+
+        let action = null;
+        let args = [];
+
+        if(mode === 'LONGEST'){
+            action = 'getSchemaWithLongest';
+            args = [this.basis];
+        } else
+
+        if(mode === 'BEST'){
+            action = 'getBestSchema';
+            args = [this.basis];
+        } else 
+
+        if(mode === 'BEST_LONGER'){
+            action = 'getBestSchema';
+            args = [this.basis, Math.floor(this.basis/100)];
+        } else 
+
+        if(mode === 'LONGEST_LONGER'){
+            action = 'getSchemaWithLongest';
+            args = [this.basis, Math.floor(this.basis/200)];
+        }
+
+        if(!action) return false;
+
+        while(this.hasAnyDetail()){
+            let schema = this[action](...args);
+            this.setPossibleSchemasNum(schema);
+            this.takeDetailsOfSchema(schema);
+            schemas.push(schema);
+        }
+
+        return schemas;
+    }
     
     
     
@@ -168,6 +225,7 @@ class LineCutter{
             this.usages = usages;
             this.totalLen = totalLen;
             this.usedLen = usedLen;
+            this.num = 1;
         }
 
         addUsage(usage, first=true){
@@ -195,7 +253,8 @@ class LineCutter{
 
     createStringFromDetails(details){
         let sizes = details.map(det => det.size);
-        let string = sizes.map(size => '0'.repeat(6 - size.toString().length) + size).join();
+            // Prefill the string by zeros if number is less than 10 signs
+        let string = sizes.map(size => '0'.repeat(10 - size.toString().length) + size).join();
         return string;
     }
 

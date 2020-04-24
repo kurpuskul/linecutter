@@ -5,5 +5,3 @@ worker.postMessage('Some');
 worker.onmessage = message => {
     console.log(message.data);
 }
-
-console.log(window);
