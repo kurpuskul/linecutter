@@ -1,20 +1,21 @@
 class LineCutter{
 
-    constructor(details, basis, saw, ends = 0, stores = [], bfirst = false){
+    constructor(details, basis, saw, ends = 0, tails = [], bfirst = false){
         this.details = this.getDetails(details);
         this.basis = Number.isInteger(basis)? basis : NaN;
         this.saw = Number.isInteger(saw)? saw : NaN;
         this.ends = Number.isInteger(ends)? ends : NaN;
-        this.stores = stores;
+        this.tails = tails;
         this.bfirst = bfirst;
-        this.schemas = [];
 
         if(Number.isNaN(this.basis) || Number.isNaN(this.saw) || Number.isNaN(this.ends)) throw new Error('Invalid arguments in LineCutter constructor');
+
+
     }
     
-    getAllChains(line){
+    getAllChains(lineLen){
 
-        let fitDetails = this.fitTo(line);
+        let fitDetails = this.fitTo(lineLen);
         if(!fitDetails) return false;
 
         let chains = [];
@@ -42,15 +43,15 @@ class LineCutter{
             }
         }
             // Starting recursive function with array of details fit to the line length
-        getChains(this.fitTo(line), line, 0, []);
+        getChains(this.fitTo(lineLen), lineLen, 0, []);
             // returning array of Chains (len : sum of detail lengths with saws between them)
         return chains.map(detailSet => (new this.Chain(detailSet, detailSet.reduce((a,b) => a + b.size + this.saw, -this.saw))));
     }
 
-    getBestChain(line, deviation = 0){
+    getBestChain(lineLen, deviation = 0){
         if(!Number.isInteger(deviation)) throw new Error('Deviation is not an integer in getBestChain()');
 
-        let allChains = this.getAllChains(line);
+        let allChains = this.getAllChains(lineLen);
         if(!allChains) return false;
 
         let longestChain = allChains.sort((a,b) => b.len - a.len)[0].len;
@@ -165,7 +166,6 @@ class LineCutter{
 
         return schemas;
     }
-    
     
     
     Detail = class {
