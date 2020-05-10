@@ -7,5 +7,5 @@ let cutter = new LineCutter(...params);
 onmessage = message => {
     let schemas = cutter.cutBasis('LONGEST');
 
-    postMessage([schemas, schemas.reduce((acc,cur) => acc + cur.num, 0), schemas[schemas.length-1]]);
+    postMessage([schemas, schemas.reduce((acc,cur) => acc + cur.num, 0), schemas[schemas.length-1]]);    
 }

@@ -60,6 +60,80 @@ class LineClass {
         return longestChains.sort((a,b) => this.createStringFromDetails(a.details) > this.createStringFromDetails(b.details) ? -1 : 1)[0];
     }
 
+    getSchemaByLen(lineLen, deviation = 0){
+        let bestChain = this.getBestChain(lineLen, deviation);
+        if(!bestChain) return false;
+
+
+        let schema = new this.Schema();
+
+        let currentDetail = null;
+        let putToSchema = (detail) => {
+            if(detail != currentDetail){
+                schema.addUsage(new this.Usage(detail, 1), false);
+                currentDetail = detail;
+            } else {
+                schema.usages.find(u => u.detail == detail).addNum();
+            }
+        }
+        bestChain.details.forEach(putToSchema);
+
+        schema.totalLen = lineLen;
+        schema.usedLen = bestChain.len;
+        return schema;
+    }
+
+    getBestSchema(line, deviation = 0){
+        let bestSchema = getSchemaByLen(line.len, deviation);
+        if(!bestSchema) return false;
+
+        bestSchema.line = line;
+        return bestSchema;
+    }
+
+    getSchemaWithLongest(line, deviation = 0){
+        let longest = this.getLongestDetail(line.len);
+        if(!longest) return false;
+
+        longest.take();
+
+        let bestSchema = this.getSchemaByLen(line.len - longest.len - this.saw, deviation);
+
+        longest.give();
+
+        if(bestSchema){
+            bestSchema.totalLen += longest.len + this.saw;
+            bestSchema.usedLen += longest.len + this.saw;
+            bestSchema.usages[0].detail == longest ? bestSchema.usages[0].addNum() : bestSchema.addUsage(new this.Usage(longest));
+        } else {
+                // getBestSchema may return false if no detail fit to the rest length of line
+                // In that case bestSchema will hold just the longest detail itself
+            bestSchema = new this.Schema([new this.Usage(longest)], line.len, longest.len);
+        }
+
+        bestSchema.line = line;
+        return bestSchema;
+    }
+
+    countPossibleSchemas(schema){
+        return Math.floor(Math.min(...schema.usages.map(usage => usage.detail.curNum/usage.num)));
+    }
+
+    setPossibleSchemasNum(schema){
+        schema.num = this.countPossibleSchemas(schema);
+        return schema;
+    }
+
+    takeDetailsOfSchema(schema){
+        schema.usages.forEach(usage => {
+            usage.detail.take(usage.num * schema.num);
+        })
+    }
+
+    hasAnyDetail(){
+        return this.details.some(detail => detail.curNum > 0);
+    }
+
     Line = class {
         constructor(len, num = 1, id = 0, type = 'basis'){
             this.len = len;
@@ -149,6 +223,6 @@ class LineClass {
 
 }
 
-let cutter = new LineClass([[300,2,1], [250, 5, 2], [450, 20, 3]], {basis: 3000, saw: 4, mode: 'LONGEST', tails : [[200, 4, 1]]});
+let cutter = new LineClass([[300,4,1], [250, 5, 2], [450, 20, 3]], {basis: 3000, saw: 4, mode: 'LONGEST', tails : [[200, 4, 1]]});
 
-console.log(cutter.getBestChain(2000, 100));
+console.log(cutter.hasAnyDetail());
